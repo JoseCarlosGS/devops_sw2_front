@@ -1,11 +1,11 @@
 import { Fragment } from "react";
-import { Dialog, Transition } from "@headlessui/react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Dialog, Transition, } from "@headlessui/react";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { useForm } from "react-hook-form";
 import TaskForm from "./task/TaskForm";
 import { TaskFormData } from "../types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createTask } from "@/api/TaskApi";
+import { createTask } from "../api/TaskApi";
 import { toast } from "react-toastify";
 export default function AddTaskModal() {
     const navigate = useNavigate();
@@ -15,14 +15,12 @@ export default function AddTaskModal() {
     const showModal = modalTask ? true : false;
     /**    * obterener el projectId de la url     */
     const params = useParams()
-    const projectId = params.projectId!
-
-    // Provide full TaskFormData defaults so types align with TaskForm
-    const initialValues = {
+    const projectId = params.projectId! 
+    const initialValues: TaskFormData = {
         name: '',
         description: '',
-        project: projectId ?? '',
-        status: 'pending' as const,
+        project: projectId,
+        status: 'pending'
     }
 
     const { register, handleSubmit, reset, formState: { errors } } = useForm<TaskFormData>({ defaultValues: initialValues })
@@ -40,14 +38,14 @@ export default function AddTaskModal() {
         }
     })
     const handleCreateTask = (formData: TaskFormData) => {
-        const data = {
-            formData,
-            projectId
-        }
-        mutate(data)
-        }
-        
-    
+        mutate({ formData, projectId })
+    }
+
+
+
+
+
+
     return (
         <>
             <Transition appear show={showModal} as={Fragment}>
@@ -99,12 +97,7 @@ export default function AddTaskModal() {
                                         onSubmit={handleSubmit(handleCreateTask)}
                                         noValidate
                                     >
-                                        {/* Ensure TaskForm receives register and errors */}
                                         <TaskForm register={register} errors={errors} />
-
-                                        {/* Register hidden fields so TaskFormData contains project and status */}
-                                        <input type="hidden" value={projectId ?? ''} {...register('project')} />
-                                        <input type="hidden" value="pending" {...register('status')} />
 
                                         <input
                                             type="submit"

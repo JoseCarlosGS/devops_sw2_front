@@ -10,16 +10,16 @@ export default function EditProjectView() {
     const projectId = params.projectId!    
 
     console.log("projectId:", projectId); 
-    
+
     const { data, isLoading, isError } = useQuery({
         queryKey: ['editProject', projectId],
         queryFn: () => getProjectById(projectId),
         retry: false,        ///para que no intente hacer la conx varias veces
     });
-    
+
     if (isLoading) return 'Cargando...'
     if (isError) return <Navigate to="/404" />  
     if (!data) return <p>No se encontró el proyecto</p> 
     if (data) return <EditProjectForm data={data} projectId={projectId} />
-     
+
 }

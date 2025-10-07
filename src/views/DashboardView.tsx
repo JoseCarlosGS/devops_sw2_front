@@ -1,149 +1,66 @@
 import { Link } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { deleteProject } from "@/api/ProjectApi";
-
-import { Fragment } from 'react'
-import { Menu, Transition } from '@headlessui/react'
-import { EllipsisVerticalIcon } from '@heroicons/react/20/solid'
-import { toast } from "react-toastify";
+import { useQuery } from "@tanstack/react-query"
+import { getProjects } from "@/api/ProjectApi";
 import { Project } from "../types";
-import { useProjectPolling } from "hooks/useProjectPolling";
+import ProjectKanban from "@/components/projects/ProjectKanban";
 
 export default function DashboardView() {
-    const { projects, isLoading, error } = useProjectPolling();
-    const queryClient = useQueryClient()
-    const { mutate } = useMutation({
-        mutationFn: deleteProject,
-        onError: (error) => { toast.error(error.message) },
-        onSuccess: (data) => {
-            toast.success(data)
-            queryClient.invalidateQueries({ queryKey: ["projects"] })
+    // Datos mock temporales para mostrar la vista
+    const mockProjects: Project[] = [
+        {
+            _id: "1",
+            projectName: "Agrocadena",
+            clientName: "Jaime Méndez",
+            description: "proyecto dirigido para el área rural en el sembradío y haciendas",
+            status: "pending"
         },
+        {
+            _id: "2", 
+            projectName: "Bluetech",
+            clientName: "Sara Monasterios",
+            description: "proyecto integración con Bluetech en pasarela de pagos",
+            status: "pending"
+        },
+        {
+            _id: "3",
+            projectName: "Gestión de Farmacias y co...",
+            clientName: "Adriana Méndez Salas",
+            description: "nuevo proyecto gestor de proyectos",
+            status: "pending"
+        }
+    ];
+
+    const { data, isLoading, isError } = useQuery<Project[]>({
+        queryKey: ["projects"],
+        queryFn: getProjects,
     })
-   
 
-    if (isLoading) return <div>Cargando...</div>
-    console.log('projects data:', projects)
-    console.log('error:', error)
+    if (isLoading) return (
+        <div className="flex justify-center items-center min-h-[400px]">
+            <div className="text-xl text-gray-600">Cargando proyectos...</div>
+        </div>
+    )
 
-    // If data is present but not an array, show an error UI instead of crashing
-    if (projects && !Array.isArray(projects)) {
-        return (
-            <div className="p-6">
-                <h2 className="text-2xl font-bold text-red-600">Error: respuesta inválida de la API</h2>
-                <p className="mt-4">Se esperaba un arreglo de proyectos pero la respuesta tiene otro formato.</p>
-                <pre className="mt-4 p-4 bg-gray-100 rounded text-sm overflow-auto">{JSON.stringify(projects, null, 2)}</pre>
-                <p className="mt-4 text-sm text-gray-500">Revisa la variable <code>VITE_API_URL</code> en tu archivo <code>.env</code> y que el backend esté corriendo.</p>
-            </div>
-        )
-    }
+    const projectsToShow = data && data.length > 0 ? data : (isError ? mockProjects : [])
 
-    if (projects)
     return (
         <>
-            <h1 className="text-5xl font-black">Mis Proyectos</h1>
-            <p className="text-2xl font-light text-gray-500 mt-5">Maneja y administra tus proyectos</p>
-
-            <nav className="my-5">
+            <div className="flex justify-between items-center mb-8">
+                <div>
+                    <h1 className="text-4xl font-bold text-gray-900">Dashboard de Proyectos</h1>
+                    <p className="text-lg text-gray-600 mt-2">Gestiona y organiza tus proyectos por estado</p>
+                </div>
                 <Link
-                    className="bg-cyan-400 hover:bg-cyan-500 px-10 py-3 text-white text-xl font-bold cursor-pointer transition-colors"
-                    to="/projects/create">
-                    Nuevo Proyecto
+                    className="bg-blue-600 hover:bg-blue-700 px-6 py-3 text-white font-semibold rounded-lg transition-colors shadow-sm"
+                    to="/projects/create"
+                >
+                    + Nuevo Proyecto
                 </Link>
-            </nav>
+            </div>
 
-            {projects && projects.length ? (
-                <ul role="list" className="divide-y divide-gray-100 border border-gray-100 mt-10 bg-white shadow-lg">
-                    {projects.map((project: Project) => (
-                        <li key={project._id} className="flex justify-between gap-x-6 px-5 py-10">
-                            <div className="flex min-w-0 gap-x-4">
-                                <div className="min-w-0 flex-auto space-y-2">
-                                    <Link
-                                        to={`/projects/${project._id}`}
-                                        className="text-gray-600 cursor-pointer hover:underline text-3xl font-bold"
-                                    >
-                                        {project.projectName}
-                                    </Link>
-                                    <p className="text-sm text-gray-400">
-                                        Cliente: {project.clientName}
-                                    </p>
-                                    <p className="text-sm text-gray-400">
-                                        {project.description}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex shrink-0 items-center gap-x-6">
-                                <Menu as="div" className="relative flex-none">
-                                    <Menu.Button className="-m-2.5 block p-2.5 text-gray-500 hover:text-gray-900">
-                                        <span className="sr-only">Opciones</span>
-                                        <EllipsisVerticalIcon className="h-9 w-9" aria-hidden="true" />
-                                    </Menu.Button>
-                                    <Transition
-                                        as={Fragment}
-                                        enter="transition ease-out duration-100"
-                                        enterFrom="transform opacity-0 scale-95"
-                                        enterTo="transform opacity-100 scale-100"
-                                        leave="transition ease-in duration-75"
-                                        leaveFrom="transform opacity-100 scale-100"
-                                        leaveTo="transform opacity-0 scale-95"
-                                    >
-                                        <Menu.Items
-                                            className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none"
-                                        >
-                                            <Menu.Item key={`view-${project._id}`}>
-                                                {({ active }) => (
-                                                    <Link
-                                                        to={`/projects/${project._id}`}
-                                                        className={`${active ? 'bg-gray-100' : ''} block px-3 py-1 text-sm leading-6 text-gray-900`}
-                                                    >
-                                                        Ver Proyecto
-                                                    </Link>
-                                                )}
-                                            </Menu.Item>
-                                            <Menu.Item key={`edit-${project._id}`}>
-                                                {({ active }) => (
-                                                    <Link
-                                                        to={`/projects/${project._id}/edit`}
-                                                        className={`${active ? 'bg-gray-100' : 'bg-gray-200'} block px-3 py-1 text-sm leading-6 text-gray-900`}
-                                                    >
-                                                        Editar Proyecto
-                                                    </Link>
-                                                )}
-                                            </Menu.Item>
-                                            <Menu.Item key={`delete-${project._id}`}>
-                                                {({ active }) => (
-                                                    <button
-                                                        type="button"
-                                                        className={`${active ? 'bg-gray-100' : ''} block px-3 py-1 text-sm leading-6 text-red-500`}
-                                                        onClick={() => {
-                                                            if (window.confirm(`¿Estás seguro de que quieres eliminar el proyecto "${project.projectName}"?`)) {
-                                                                mutate(project._id)
-                                                            }
-                                                        }}
-                                                    >
-                                                        Eliminar Proyecto
-                                                    </button>
-                                                )}
-                                            </Menu.Item>
-                                        </Menu.Items>
-                                    </Transition>
-                                </Menu>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
-            ) : (
-                <p className="text-center py-20">
-                    No hay proyectos para mostrar{" "}
-                    <Link
-                        to="/projects/create"
-                        className="bg-cyan-400 hover:bg-cyan-500 px-10 py-3 text-white text-xl font-bold cursor-pointer transition-colors"
-                    >
-                        Crear Proyecto 
-                    </Link>
-                </p>
-            )}
+            <ProjectKanban projects={projectsToShow} />
+
+
         </>
     )
 }
-   

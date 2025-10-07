@@ -3,7 +3,7 @@ import ProjectForm from "../components/projects/ProjectForm";
 import { Link, useNavigate } from "react-router-dom";
 import { createProject } from "@/api/ProjectApi";
 import { toast } from "react-toastify"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 
 ///vista para crear los proyectos 
 
@@ -15,6 +15,7 @@ export type ProjectFormData = {
 
 export default function CreateProjectView() {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
     const initialValues: ProjectFormData = {
         projectName: "",
@@ -29,20 +30,23 @@ export default function CreateProjectView() {
     } = useForm<ProjectFormData>({
         defaultValues: initialValues
     });
-    const { mutate } = useMutation({
+    const { mutate, isPending } = useMutation({
         mutationFn: createProject,
         onError: (error) => {
-            toast.error(error.message)
-            console.log("desde onError")
+            toast.error(error.message || "Error al crear el proyecto")
+            console.log("Error al crear proyecto:", error)
         },
         onSuccess: (data) => {
-            toast.success(data)
+            toast.success(data || "Proyecto creado exitosamente")
+            // Invalidar la cache de proyectos para que se actualice la lista
+            queryClient.invalidateQueries({ queryKey: ["projects"] })
             navigate("/")
-            console.log("desde onSuccess")
+            console.log("Proyecto creado exitosamente:", data)
         }
     });
 
     const handleForm = async (formData: ProjectFormData) => {
+        console.log("Enviando datos del proyecto:", formData)
         mutate(formData)
     }
     return (
@@ -53,10 +57,10 @@ export default function CreateProjectView() {
             </p>
 
             <Link
-                to="/proyectos"
-                className="bg-cyan-600 text-white py-2 px-5 rounded-lg inline-block mb-10 font-bold uppercase"
+                to="/"
+                className="bg-gray-600 hover:bg-gray-700 text-white py-2 px-5 rounded-lg inline-block mb-10 font-bold uppercase transition-colors"
             >
-                Volver a Proyectos
+                ← Volver al Dashboard
             </Link>
 
             <div className="bg-white shadow-lg rounded-lg p-10">
@@ -67,8 +71,13 @@ export default function CreateProjectView() {
                     <ProjectForm register={register} errors={errors} />
                     <input
                         type="submit"
-                        value="CREAR PROYECTO"
-                        className="bg-cyan-500 hover:bg-cyan-600 w-full p-3 text-white uppercase font-bold cursor-pointer transition-colors rounded-md mt-8"
+                        value={isPending ? "CREANDO PROYECTO..." : "CREAR PROYECTO"}
+                        disabled={isPending}
+                        className={`w-full p-3 text-white uppercase font-bold transition-colors rounded-md mt-8 ${
+                            isPending 
+                                ? "bg-gray-400 cursor-not-allowed" 
+                                : "bg-cyan-500 hover:bg-cyan-600 cursor-pointer"
+                        }`}
                     />
                 </form>
             </div>
