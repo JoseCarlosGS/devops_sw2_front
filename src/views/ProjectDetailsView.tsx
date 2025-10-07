@@ -5,6 +5,7 @@ import EditTaskData from "@/components/task/EditTaskData"
 import TaskList from "@/components/task/TaskList"
 import DeployDockerForm from "@/components/projects/DeployDockerForm"
 import DeployDockerModal from "@/components/projects/DeployDockerModal"
+import DeployRepositoryForm from "@/components/projects/DeployRepositoryForm"
 
 import { useQuery } from "@tanstack/react-query"
 import { Navigate, useParams, useNavigate, useLocation } from "react-router-dom"
@@ -23,6 +24,7 @@ export default function ProjectDetailsView() {
 
   const searchParams = new URLSearchParams(location.search)
   const showDeployDockerForm = searchParams.get("deployDocker")
+  const showDeployRepositoryForm = searchParams.get("deployRepository")
 
   // Estado para modal y carga
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -32,6 +34,17 @@ export default function ProjectDetailsView() {
   const closeDeployDockerForm = () => {
     searchParams.delete("deployDocker")
     navigate(`${location.pathname}?${searchParams.toString()}`)
+  }
+
+  const closeDeployRepositoryForm = () => {
+    searchParams.delete("deployRepository")
+    navigate(`${location.pathname}?${searchParams.toString()}`)
+  }
+
+  const handleRepositoryDeployConfirm = (data: any) => {
+    // Navegar a la URL ingresada
+    window.open(data.repositoryUrl, '_blank')
+    closeDeployRepositoryForm()
   }
 
   // const handleDeploy = () => {
@@ -76,17 +89,28 @@ export default function ProjectDetailsView() {
             Agregar Tarea
           </button>
 
-          {/* Botón Desplegar Docker */}
-          <button
-            type="button"
-            className="bg-cyan-400 hover:bg-cyan-500 px-10 py-3 text-white text-xl font-bold cursor-pointer transition-colors"
-            onClick={() => navigate(location.pathname + "?deployDocker=true")}
-          >
-            Desplegar Docker
-          </button>
+          <div className="flex gap-x-3">
+            {/* Botón Desplegar Docker */}
+            <button
+              type="button"
+              className="bg-cyan-400 hover:bg-cyan-500 px-10 py-3 text-white text-xl font-bold cursor-pointer transition-colors"
+              onClick={() => navigate(location.pathname + "?deployDocker=true")}
+            >
+              Desplegar Docker
+            </button>
+
+            {/* Botón Desplegar Proyecto */}
+            <button
+              type="button"
+              className="bg-cyan-400 hover:bg-green-800 px-10 py-3 text-white text-xl font-bold cursor-pointer transition-colors"
+              onClick={() => navigate(location.pathname + "?deployRepository=true")}
+            >
+              Desplegar Proyecto
+            </button>
+          </div>
         </nav>
 
-        {/* Formulario encima de las tareas */}
+        {/* Formulario Docker encima de las tareas */}
         {showDeployDockerForm && (
           <div className="mb-10 p-5 bg-gray-50 border border-gray-200 rounded-xl shadow-sm">
             <DeployDockerForm />
@@ -133,6 +157,16 @@ export default function ProjectDetailsView() {
                 {isDeploying ? "Desplegando..." : "Desplegar"}
               </button> */}
             </div>
+          </div>
+        )}
+
+        {/* Formulario Repositorio encima de las tareas */}
+        {showDeployRepositoryForm && (
+          <div className="mb-10">
+            <DeployRepositoryForm 
+              onConfirm={handleRepositoryDeployConfirm}
+              onCancel={closeDeployRepositoryForm}
+            />
           </div>
         )}
 

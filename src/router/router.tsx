@@ -4,6 +4,8 @@ import DashboardView from '@/views/DashboardView'
 import EditProjectView from '@/views/EditProjectView';
 import CreateProjectView from '@/views/CreateProjectView';
 import ProjectDetailsView from '@/views/ProjectDetailsView';
+import ProfileView from '@/views/ProfileView';
+import EditProfileView from '@/views/EditProfileView';
 
 export default function Router() {
     return (
@@ -15,6 +17,8 @@ export default function Router() {
                     <Route path="/projects/create" element={<CreateProjectView />} />
                     <Route path="/projects/:projectId" element={<ProjectDetailsView />} />
                     <Route path="/projects/:projectId/edit" element={<EditProjectView />} />
+                    <Route path="/profile" element={<ProfileView />} />
+                    <Route path="/profile/edit" element={<EditProfileView />} />
                 </Route>
 
             </Routes>

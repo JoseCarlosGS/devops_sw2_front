@@ -1,113 +1,100 @@
-import { useState } from 'react';
-import { toast } from 'react-toastify';
+import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
+
+type ProfileFormData = {
+    name: string;
+    email: string;
+    currentPassword: string;
+    newPassword: string;
+}
 
 export default function ProfileView() {
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        role: '',
-        password: '',
-        newPassword: ''
-    });
+    const { register, handleSubmit, formState: { errors } } = useForm<ProfileFormData>();
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        // Aquí irá la lógica para actualizar el perfil
-        toast.success('Perfil actualizado correctamente');
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+    const onSubmit = (data: ProfileFormData) => {
+        try {
+            console.log(data);
+            toast.success('Perfil actualizado correctamente');
+        } catch (error) {
+            toast.error('Error al actualizar el perfil');
+        }
     };
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <div className="max-w-2xl mx-auto">
-                <h1 className="text-4xl font-black mb-8">Perfil de Usuario</h1>
-                
-                <div className="bg-white rounded-lg shadow-lg p-6">
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                            <label className="block text-gray-700 text-sm font-bold mb-2">
-                                Nombre
-                            </label>
-                            <input
-                                type="text"
-                                name="name"
-                                value={formData.name}
-                                onChange={handleChange}
-                                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                            />
-                        </div>
+        <div className="container max-w-3xl mx-auto mt-10">
+            <h1 className="text-4xl font-black mb-10">Mi Perfil</h1>
 
-                        <div>
-                            <label className="block text-gray-700 text-sm font-bold mb-2">
-                                Email
-                            </label>
-                            <input
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                            />
-                        </div>
+            <div className="bg-white shadow-lg rounded-lg p-10">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                    <div>
+                        <label className="text-xl block mb-2">Nombre</label>
+                        <input
+                            type="text"
+                            {...register("name", { required: "El nombre es obligatorio" })}
+                            className="w-full p-3 border border-gray-300 rounded-lg"
+                        />
+                        {errors.name && (
+                            <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+                        )}
+                    </div>
 
-                        <div>
-                            <label className="block text-gray-700 text-sm font-bold mb-2">
-                                Rol
-                            </label>
-                            <input
-                                type="text"
-                                name="role"
-                                value={formData.role}
-                                onChange={handleChange}
-                                disabled
-                                className="w-full p-3 border border-gray-300 rounded-md bg-gray-50"
-                            />
-                        </div>
+                    <div>
+                        <label className="text-xl block mb-2">Email</label>
+                        <input
+                            type="email"
+                            {...register("email", {
+                                required: "El email es obligatorio",
+                                pattern: {
+                                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                                    message: "Email inválido"
+                                }
+                            })}
+                            className="w-full p-3 border border-gray-300 rounded-lg"
+                        />
+                        {errors.email && (
+                            <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+                        )}
+                    </div>
 
-                        <div className="border-t pt-6">
-                            <h3 className="text-lg font-semibold mb-4">Cambiar Contraseña</h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                                        Contraseña Actual
-                                    </label>
-                                    <input
-                                        type="password"
-                                        name="password"
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                                        Nueva Contraseña
-                                    </label>
-                                    <input
-                                        type="password"
-                                        name="newPassword"
-                                        value={formData.newPassword}
-                                        onChange={handleChange}
-                                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                                    />
-                                </div>
+                    <div className="border-t pt-6 mt-6">
+                        <h3 className="text-2xl font-bold mb-4">Cambiar Contraseña</h3>
+                        
+                        <div className="space-y-6">
+                            <div>
+                                <label className="text-xl block mb-2">Contraseña Actual</label>
+                                <input
+                                    type="password"
+                                    {...register("currentPassword")}
+                                    className="w-full p-3 border border-gray-300 rounded-lg"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-xl block mb-2">Nueva Contraseña</label>
+                                <input
+                                    type="password"
+                                    {...register("newPassword", {
+                                        minLength: {
+                                            value: 6,
+                                            message: "La contraseña debe tener al menos 6 caracteres"
+                                        }
+                                    })}
+                                    className="w-full p-3 border border-gray-300 rounded-lg"
+                                />
+                                {errors.newPassword && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.newPassword.message}</p>
+                                )}
                             </div>
                         </div>
+                    </div>
 
-                        <button
-                            type="submit"
-                            className="w-full bg-cyan-600 text-white py-3 px-4 rounded-md hover:bg-cyan-700 transition-colors font-bold"
-                        >
-                            Guardar Cambios
-                        </button>
-                    </form>
-                </div>
+                    <button
+                        type="submit"
+                        className="bg-cyan-600 text-white py-3 px-6 rounded-lg font-bold hover:bg-cyan-700 transition-colors w-full"
+                    >
+                        Guardar Cambios
+                    </button>
+                </form>
             </div>
         </div>
     );
