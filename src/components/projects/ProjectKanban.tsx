@@ -16,12 +16,18 @@ import { Project } from "@/types/index";
 import { deleteProject, updateProjectStatus } from "@/api/ProjectApi";
 
 
-
 type ProjectKanbanProps = {
     projects: Project[];
 }
 
-const projectStatuses = [
+// Define el tipo de status
+type ProjectStatus = "pending" | "waiting" | "inProgress" | "inReview" | "completed";
+
+const projectStatuses: Array<{
+    id: ProjectStatus;
+    name: string;
+    headerColor: string;
+}> = [
     {
         id: "pending",
         name: "Pendiente",
@@ -29,7 +35,7 @@ const projectStatuses = [
     },
     {
         id: "waiting",
-        name: "En Espera", 
+        name: "En Espera",
         headerColor: "bg-red-500"
     },
     {
@@ -70,9 +76,9 @@ export default function ProjectKanban({ projects }: ProjectKanbanProps) {
         }
     });
 
-    const { mutate: updateStatusMutation, isPending: isUpdating } = useMutation({
+    const { mutate: updateStatusMutation } = useMutation({
         mutationFn: updateProjectStatus,
-        onError: (error, variables) => {
+        onError: (error) => {
             // Revertir el estado optimista en caso de error
             setOptimisticProjects(projects);
             toast.error(error.message || "Error al actualizar el proyecto");
@@ -95,13 +101,13 @@ export default function ProjectKanban({ projects }: ProjectKanbanProps) {
         setDraggedProject(project);
         e.dataTransfer.effectAllowed = "move";
         e.dataTransfer.setData("text/plain", project._id);
-        
+
         // Agregar efecto visual al elemento arrastrado
         const target = e.target as HTMLElement;
         target.style.opacity = "0.6";
         target.style.transform = "rotate(5deg)";
         target.classList.add("shadow-2xl", "z-50");
-        
+
         // Agregar clase a todas las zonas de drop
         setTimeout(() => {
             document.querySelectorAll('[data-drop-zone]').forEach(zone => {
@@ -116,12 +122,12 @@ export default function ProjectKanban({ projects }: ProjectKanbanProps) {
         target.style.opacity = "1";
         target.style.transform = "rotate(0deg)";
         target.classList.remove("shadow-2xl", "z-50");
-        
+
         // Remover clases de todas las zonas de drop
         document.querySelectorAll('[data-drop-zone]').forEach(zone => {
             zone.classList.remove('drop-zone-active', 'drop-zone-hover');
         });
-        
+
         setDraggedProject(null);
     };
 
@@ -147,25 +153,27 @@ export default function ProjectKanban({ projects }: ProjectKanbanProps) {
         }
     };
 
-    const handleDrop = (e: React.DragEvent, newStatus: string) => {
+    // ✅ CORRECCIÓN: Cambia el tipo del parámetro newStatus
+    const handleDrop = (e: React.DragEvent, newStatus: ProjectStatus) => {
         e.preventDefault();
         const target = e.currentTarget as HTMLElement;
         target.classList.remove("drop-zone-hover");
-        
+
         if (draggedProject && draggedProject.status !== newStatus) {
-            const updatedProjects = optimisticProjects.map(project => 
-                project._id === draggedProject._id 
+            // Ahora TypeScript reconoce correctamente el tipo
+            const updatedProjects = optimisticProjects.map(project =>
+                project._id === draggedProject._id
                     ? { ...project, status: newStatus }
                     : project
             );
             setOptimisticProjects(updatedProjects);
-            
+
             target.classList.add("drop-success");
             setTimeout(() => target.classList.remove("drop-success"), 500);
-            
-            updateStatusMutation({ 
-                projectId: draggedProject._id, 
-                status: newStatus 
+
+            updateStatusMutation({
+                projectId: draggedProject._id,
+                status: newStatus
             });
             const statusName = projectStatuses.find(s => s.id === newStatus)?.name;
             toast.success(`✅ Proyecto "${draggedProject.projectName}" movido a ${statusName}`);
@@ -173,14 +181,14 @@ export default function ProjectKanban({ projects }: ProjectKanbanProps) {
         setDraggedProject(null);
     };
 
-    const getProjectsByStatus = (statusId: string) => {
+    const getProjectsByStatus = (statusId: ProjectStatus) => {
         return optimisticProjects.filter(project => {
             const projectStatus = project.status || "pending";
             return projectStatus === statusId;
         });
     };
 
-    const getProjectCount = (statusId: string) => {
+    const getProjectCount = (statusId: ProjectStatus) => {
         return getProjectsByStatus(statusId).length;
     };
 
@@ -204,7 +212,6 @@ export default function ProjectKanban({ projects }: ProjectKanbanProps) {
                             onDragLeave={handleDragLeave}
                             onDrop={(e) => handleDrop(e, status.id)}
                         >
-
                             <div className={`${status.headerColor} text-white p-3 text-center`}>
                                 <h3 className="font-medium text-sm">
                                     {status.name} ({getProjectCount(status.id)})
@@ -212,7 +219,6 @@ export default function ProjectKanban({ projects }: ProjectKanbanProps) {
                             </div>
 
                             <div className="border-2 border-gray-200 min-h-[400px] bg-gray-50 transition-all duration-200">
-
                                 <div className="p-3 space-y-3">
                                     {getProjectsByStatus(status.id).map((project) => (
                                         <div
@@ -246,9 +252,8 @@ export default function ProjectKanban({ projects }: ProjectKanbanProps) {
                                                                 {({ active }) => (
                                                                     <Link
                                                                         to={`/projects/${project._id}`}
-                                                                        className={`${
-                                                                            active ? 'bg-gray-50' : ''
-                                                                        } flex items-center gap-2 px-4 py-2 text-sm text-gray-700`}
+                                                                        className={`${active ? 'bg-gray-50' : ''
+                                                                            } flex items-center gap-2 px-4 py-2 text-sm text-gray-700`}
                                                                     >
                                                                         <EyeIcon className="h-4 w-4" />
                                                                         Ver Proyecto
@@ -259,9 +264,8 @@ export default function ProjectKanban({ projects }: ProjectKanbanProps) {
                                                                 {({ active }) => (
                                                                     <Link
                                                                         to={`/projects/${project._id}/edit`}
-                                                                        className={`${
-                                                                            active ? 'bg-gray-50' : ''
-                                                                        } flex items-center gap-2 px-4 py-2 text-sm text-gray-700`}
+                                                                        className={`${active ? 'bg-gray-50' : ''
+                                                                            } flex items-center gap-2 px-4 py-2 text-sm text-gray-700`}
                                                                     >
                                                                         <PencilIcon className="h-4 w-4" />
                                                                         Editar Proyecto
@@ -272,9 +276,8 @@ export default function ProjectKanban({ projects }: ProjectKanbanProps) {
                                                                 {({ active }) => (
                                                                     <button
                                                                         onClick={() => handleDeleteProject(project._id, project.projectName)}
-                                                                        className={`${
-                                                                            active ? 'bg-red-50' : ''
-                                                                        } flex items-center gap-2 px-4 py-2 text-sm text-red-600 w-full text-left`}
+                                                                        className={`${active ? 'bg-red-50' : ''
+                                                                            } flex items-center gap-2 px-4 py-2 text-sm text-red-600 w-full text-left`}
                                                                     >
                                                                         <TrashIcon className="h-4 w-4" />
                                                                         Eliminar Proyecto
@@ -291,9 +294,8 @@ export default function ProjectKanban({ projects }: ProjectKanbanProps) {
                                                     <UserIcon className="h-3 w-3 text-gray-400" />
                                                     <span className="text-xs text-gray-600">{project.clientName}</span>
                                                 </div>
-                                                <div className={`w-2 h-2 rounded-full ${
-                                                    projectStatuses.find(s => s.id === (project.status || 'pending'))?.headerColor || 'bg-gray-500'
-                                                }`}></div>
+                                                <div className={`w-2 h-2 rounded-full ${projectStatuses.find(s => s.id === (project.status || 'pending'))?.headerColor || 'bg-gray-500'
+                                                    }`}></div>
                                             </div>
 
                                             <p className="text-xs text-gray-600 line-clamp-2">
@@ -301,7 +303,6 @@ export default function ProjectKanban({ projects }: ProjectKanbanProps) {
                                             </p>
                                         </div>
                                     ))}
-
 
                                     {getProjectsByStatus(status.id).length === 0 && (
                                         <div className="empty-drop-zone mx-2">
