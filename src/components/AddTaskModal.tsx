@@ -1,11 +1,11 @@
-import { Fragment, use } from "react";
+import { Fragment } from "react";
 import { Dialog, Transition, } from "@headlessui/react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { useForm } from "react-hook-form";
 import TaskForm from "./task/TaskForm";
 import { TaskFormData } from "../types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createTask } from "@/api/TaskApi";
+import { createTask } from "../api/TaskApi";
 import { toast } from "react-toastify";
 export default function AddTaskModal() {
     const navigate = useNavigate();
@@ -16,12 +16,14 @@ export default function AddTaskModal() {
     /**    * obterener el projectId de la url     */
     const params = useParams()
     const projectId = params.projectId! 
-    const initialValues = {
+    const initialValues: TaskFormData = {
         name: '',
-        description: ''
+        description: '',
+        project: projectId,
+        status: 'pending'
     }
 
-    const { register, handleSubmit,reset, formState: { errors } } = useForm({ defaultValues: initialValues })
+    const { register, handleSubmit, reset, formState: { errors } } = useForm<TaskFormData>({ defaultValues: initialValues })
     const queryClient = useQueryClient()
     const { mutate } = useMutation({
         mutationFn: createTask ,
@@ -36,14 +38,14 @@ export default function AddTaskModal() {
         }
     })
     const handleCreateTask = (formData: TaskFormData) => {
-        const data = {
-            formData,
-            projectId
-        }
-        mutate(data)
-        }
-        
-    
+        mutate({ formData, projectId })
+    }
+
+
+
+
+
+
     return (
         <>
             <Transition appear show={showModal} as={Fragment}>

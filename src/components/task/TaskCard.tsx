@@ -6,12 +6,19 @@ import { Fragment } from "react/jsx-runtime"
 
 type TaskCardProps = {
     task: Task
+    onDragStart?: (e: React.DragEvent, task: Task) => void
+    onDragEnd?: (e: React.DragEvent) => void
 }
 
-export default function TaskCard({ task }: TaskCardProps) {
+export default function TaskCard({ task, onDragStart, onDragEnd }: TaskCardProps) {
     const navigate = useNavigate()
     return (
-        <li className="p-5 bg-white border border-slate-300 flex justify-between gap-3">
+        <li
+            className="p-5 bg-white border border-slate-300 flex justify-between gap-3 draggable-card select-none rounded-lg"
+            draggable={true}
+            onDragStart={(e) => onDragStart && onDragStart(e, task)}
+            onDragEnd={(e) => onDragEnd && onDragEnd(e)}
+        >
             <div className="min-w-0 flex flex-col gap-y-4">
                 <button
                     type="button"
@@ -68,4 +75,5 @@ export default function TaskCard({ task }: TaskCardProps) {
             </div>
         </li>
     )
+
 }

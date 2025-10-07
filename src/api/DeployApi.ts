@@ -2,7 +2,6 @@ import api from "@/lib/axios";
 import { isAxiosError } from "axios";
 import { z } from "zod";
 
-// Zod schema for deploy request
 export const deployFormSchema = z.object({
     name: z.string().min(1),
     repoUrl: z.string().url(),
@@ -12,7 +11,6 @@ export const deployFormSchema = z.object({
 
 export type DeployFormData = z.infer<typeof deployFormSchema>;
 
-// Zod schema for deploy response (customize as needed)
 export const deployResponseSchema = z.object({
     message: z.string(),
     projectId: z.string(),
@@ -25,11 +23,7 @@ export const deployResponseSchema = z.object({
 
 export type DeployResponse = z.infer<typeof deployResponseSchema>;
 
-/**
- * Sends a deploy request to the API.
- * @param formData - Deploy form data
- * @returns DeployResponse
- */
+
 export async function deployProject(formData: DeployFormData): Promise<DeployResponse> {
     const parseResult = deployFormSchema.safeParse(formData);
     if (!parseResult.success) {

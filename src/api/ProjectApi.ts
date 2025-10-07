@@ -1,4 +1,3 @@
-
 import api from "@/lib/axios";
 import { dashboardProjectSchema, Project, ProjectFormData } from "../types";
 import { isAxiosError } from "axios";
@@ -61,7 +60,7 @@ export async function updateProject({ formData, projectId }: ProjectAPIType) {
         if (isAxiosError(error) && error.response) {
             throw new Error(error.response.data.message)
         }
-        
+
     }
 }
 export async function deleteProject(id: Project['_id']) {
@@ -77,3 +76,14 @@ export async function deleteProject(id: Project['_id']) {
     }
 }
 
+export async function updateProjectStatus({ projectId, status }: { projectId: Project['_id'], status: string }) {
+    try {
+        const { data } = await api.patch<string>(`/projects/${projectId}/status`, { status });
+        return data;
+    } catch (error) {
+        if (isAxiosError(error) && error.response) {
+            throw new Error(error.response.data.message);
+        }
+        throw new Error("Error updating project status");
+    }
+}

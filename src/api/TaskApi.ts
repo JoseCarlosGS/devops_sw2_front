@@ -19,7 +19,7 @@ export async function createTask({formData, projectId}:Pick<TaskApi,'formData'|'
     } catch (error) {
         if (isAxiosError(error)&& error.response ) {
             throw new Error(error.response.data.error);           
-        
+
         }
     }    
 }
@@ -32,8 +32,25 @@ export async function getTasksByID({projectId, taskId}:Pick<TaskApi,'projectId'|
     } catch (error) {
         if (isAxiosError(error)&& error.response ) {
             throw new Error(error.response.data.error);           
-        
+
         }
-    
+
     } 
+}
+
+export async function updateTaskStatus({ projectId, taskId, status }: { 
+    projectId: Project['_id'], 
+    taskId: Task['_id'], 
+    status: string 
+}) {
+    try {
+        const url = `/projects/${projectId}/tasks/${taskId}/status`;
+        const { data } = await api.patch<string>(url, { status });
+        return data;
+    } catch (error) {
+        if (isAxiosError(error) && error.response) {
+            throw new Error(error.response.data.error);
+        }
+        throw new Error("Error updating task status");
+    }
 }

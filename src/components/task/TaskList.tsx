@@ -1,6 +1,11 @@
 import { Task } from "@/types/index"
 import TaskCard from "@/components/task/TaskCard";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+import { toast } from "react-toastify";
+import { useParams } from "react-router-dom";
+import { updateTaskStatus } from "@/api/TaskApi";
 
 type TaskListProps = {
     tasks: Task[]
@@ -25,8 +30,97 @@ const statusTraslations: { [key: string]: string } = {
 }
 
 export default function TaskList({ tasks }: TaskListProps) {
+    const [draggedTask, setDraggedTask] = useState<Task | null>(null);
+    const { projectId } = useParams();
+    const queryClient = useQueryClient();
+
+    const { mutate: updateStatusMutation } = useMutation({
+        mutationFn: updateTaskStatus,
+        onError: (error) => {
+            toast.error(error.message);
+        },
+        onSuccess: () => {
+            toast.success("Estado de tarea actualizado");
+            queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+        }
+    });
+
+    const handleDragStart = (e: React.DragEvent, task: Task) => {
+        setDraggedTask(task);
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", task._id);
+        
+        // Agregar efecto visual al elemento arrastrado
+        const target = e.target as HTMLElement;
+        target.classList.add("dragging");
+        
+        // Agregar clase a todas las zonas de drop
+        setTimeout(() => {
+            document.querySelectorAll('[data-task-drop-zone]').forEach(zone => {
+                zone.classList.add('drop-zone-active');
+            });
+        }, 0);
+    };
+
+    const handleDragEnd = (e: React.DragEvent) => {
+        // Restaurar estilos del elemento arrastrado
+        const target = e.target as HTMLElement;
+        target.classList.remove("dragging");
+        
+        // Remover clases de todas las zonas de drop
+        document.querySelectorAll('[data-task-drop-zone]').forEach(zone => {
+            zone.classList.remove('drop-zone-active', 'drop-zone-hover');
+        });
+        
+        setDraggedTask(null);
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+    };
+
+    const handleDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        const target = e.currentTarget as HTMLElement;
+        if (draggedTask) {
+            target.classList.add("drop-zone-hover");
+        }
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        const target = e.currentTarget as HTMLElement;
+        // Solo remover si realmente salimos del elemento
+        if (!target.contains(e.relatedTarget as Node)) {
+            target.classList.remove("drop-zone-hover");
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent, newStatus: string) => {
+        e.preventDefault();
+        const target = e.currentTarget as HTMLElement;
+        target.classList.remove("drop-zone-hover");
+        
+        if (draggedTask && draggedTask.status !== newStatus && projectId) {
+            // Animación de éxito
+            target.classList.add("drop-success");
+            setTimeout(() => target.classList.remove("drop-success"), 500);
+            
+            updateStatusMutation({ 
+                projectId, 
+                taskId: draggedTask._id, 
+                status: newStatus 
+            });
+            
+            const statusName = statusTraslations[newStatus];
+            toast.success(`✅ Tarea "${draggedTask.name}" movida a ${statusName}`);
+        }
+        setDraggedTask(null);
+    };
+
     //console.log("TaskList render - tasks received:", tasks);
-    
+
     // Crear un nuevo objeto inicial en cada render para evitar contaminación
     const groupedTasks = useMemo(() => {
         // CREAR UN NUEVO OBJETO EN CADA CÁLCULO
@@ -37,20 +131,20 @@ export default function TaskList({ tasks }: TaskListProps) {
             underReview: [],
             completed: []
         };
-        
+
         const grouped = tasks.reduce((acc, task) => {
             const status = task.status || "pending";
             //console.log(`Processing task: ${task.name} with status: ${status}`);
-            
-            
+
+
             if (!acc[status]) {
                 acc[status] = [];
             }
-            
+
             acc[status].push(task);
             return acc;
         }, freshInitialGroup); 
-        
+
        // console.log("Final grouped result:", grouped);
         return grouped;
     }, [tasks]);
@@ -59,20 +153,33 @@ export default function TaskList({ tasks }: TaskListProps) {
         <>
             <h2 className="text-5xl font-black my-10">Tareas</h2>
 
-            <div className='flex gap-5 overflow-x-scroll 2xl:overflow-auto pb-32'>
+            <div className='flex gap-5 overflow-x-scroll 2xl:overflow-auto pb-32 kanban-container'>
                 {Object.entries(groupedTasks).map(([status, statusTasks]) => (
-                    <div key={status} className='min-w-[300px] 2xl:min-w-0 2xl:w-1/5'>
+                    <div 
+                        key={status} 
+                        className='min-w-[300px] 2xl:min-w-0 2xl:w-1/5'
+                        data-task-drop-zone={status}
+                        onDragOver={handleDragOver}
+                        onDragEnter={handleDragEnter}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, status)}
+                    >
                         <h3 className={`capitalize text-xl font-light border border-slate-300 bg-white p-3 border-t-8 ${statusStyles[status]}`}>
                             {statusTraslations[status]} ({statusTasks.length})
                         </h3>
-                        <ul className='mt-5 space-y-5'>
+                        <ul className='mt-5 space-y-5 min-h-[200px] transition-all duration-200'>
                             {statusTasks.length === 0 ? (
-                                <li className="text-gray-500 text-center pt-3">No Hay tareas</li>
+                                <li className="empty-drop-zone">
+                                    <p className="text-sm font-medium">No hay tareas</p>
+                                    <p className="text-xs mt-1">Arrastra una tarea aquí</p>
+                                </li>
                             ) : (
                                 statusTasks.map(task => (
                                     <TaskCard 
                                         key={task._id}
-                                        task={task} 
+                                        task={task}
+                                        onDragStart={handleDragStart}
+                                        onDragEnd={handleDragEnd}
                                     />
                                 ))
                             )}
@@ -82,4 +189,5 @@ export default function TaskList({ tasks }: TaskListProps) {
             </div>
         </>
     )
+
 }

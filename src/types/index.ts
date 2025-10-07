@@ -14,9 +14,9 @@ type Auth = z.infer<typeof authSchema>
 
 export type UserLoginForm = Pick<Auth, 'email' | 'password'>;
 export type UserRegistrationForm = Pick<Auth, 'name' | 'email' | 'password' | 'confirmedPassword'>;
-/**
- * tasks
- */
+
+
+
 
 export const tasksStatusSchema = z.enum(['pending', 'onHold', 'inProgress', 'underReview', 'completed']);
 export const taskSchema = z.object({
@@ -25,18 +25,21 @@ export const taskSchema = z.object({
     description: z.string(),
     project: z.string(),
     status: tasksStatusSchema,
-    
+
 });
 export type Task = z.infer<typeof taskSchema>;
 export type TaskFormData = Pick <Task ,'name' | 'description' | 'project' | 'status'>;
 
 /** proyects */
 
+export const projectStatusSchema = z.enum(['pending', 'waiting', 'inProgress', 'inReview', 'completed']);
+
 export const projectSchema = z.object({
     _id: z.string(),
     projectName: z.string(),
     clientName: z.string(),
     description: z.string(),
+    status: projectStatusSchema.optional(),
 });
 
 export const dashboardProjectSchema = z.array (

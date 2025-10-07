@@ -1,2 +1,150 @@
 @import "tailwindcss";
 @import "tailwindcss/utilities";
+
+
+/* Estilos para Drag & Drop */
+
+/* Zona de drop activa */
+[data-drop-zone].drop-zone-active,
+[data-task-drop-zone].drop-zone-active {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+[data-drop-zone].drop-zone-active::before,
+[data-task-drop-zone].drop-zone-active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 2px dashed #3b82f6;
+    border-radius: 8px;
+    background: rgba(59, 130, 246, 0.05);
+    z-index: 1;
+    animation: pulse-border 2s infinite;
+}
+
+/* Zona de drop cuando se hace hover */
+[data-drop-zone].drop-zone-hover,
+[data-task-drop-zone].drop-zone-hover {
+    transform: scale(1.02);
+    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
+}
+
+[data-drop-zone].drop-zone-hover::before,
+[data-task-drop-zone].drop-zone-hover::before {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+    animation: pulse-success 1s infinite;
+}
+
+/* Animación de éxito al soltar */
+[data-drop-zone].drop-success,
+[data-task-drop-zone].drop-success {
+    animation: drop-success 0.5s ease;
+}
+
+/* Elemento siendo arrastrado */
+.dragging {
+    opacity: 0.6 !important;
+    transform: rotate(5deg) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important;
+    z-index: 1000 !important;
+    cursor: grabbing !important;
+}
+
+/* Tarjetas arrastrables */
+.draggable-card {
+    cursor: grab;
+    transition: all 0.2s ease;
+}
+
+.draggable-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.draggable-card:active {
+    cursor: grabbing;
+}
+
+/* Indicador visual para columnas vacías */
+.empty-drop-zone {
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    color: #6b7280;
+    background: #f9fafb;
+    transition: all 0.3s ease;
+}
+
+.empty-drop-zone:hover {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+    color: #3b82f6;
+}
+
+/* Mejoras para scroll horizontal */
+.kanban-container {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.kanban-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.kanban-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.kanban-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.kanban-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Animaciones */
+@keyframes pulse-border {
+    0%, 100% {
+        border-color: #3b82f6;
+        opacity: 1;
+    }
+    50% {
+        border-color: #60a5fa;
+        opacity: 0.7;
+    }
+}
+
+@keyframes pulse-success {
+    0%, 100% {
+        border-color: #10b981;
+        opacity: 1;
+    }
+    50% {
+        border-color: #34d399;
+        opacity: 0.8;
+    }
+}
+
+@keyframes drop-success {
+    0% {
+        transform: scale(1);
+        background-color: rgba(16, 185, 129, 0.1);
+    }
+    50% {
+        transform: scale(1.05);
+        background-color: rgba(16, 185, 129, 0.2);
+    }
+    100% {
+        transform: scale(1);
+        background-color: transparent;
+    }
+}
