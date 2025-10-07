@@ -1,18 +1,16 @@
 import { Link } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { deleteProject, getProjects } from "@/api/ProjectApi";
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { deleteProject } from "@/api/ProjectApi";
 
 import { Fragment } from 'react'
 import { Menu, Transition } from '@headlessui/react'
 import { EllipsisVerticalIcon } from '@heroicons/react/20/solid'
 import { toast } from "react-toastify";
 import { Project } from "../types";
+import { useProjectPolling } from "hooks/useProjectPolling";
 
 export default function DashboardView() {
-    const { data, isLoading, isError } = useQuery<Project[]>({
-        queryKey: ["projects"],   //tiene que ser unico y un arreglo , 
-        queryFn: getProjects,
-    })
+    const { projects, isLoading, error } = useProjectPolling();
     const queryClient = useQueryClient()
     const { mutate } = useMutation({
         mutationFn: deleteProject,
@@ -25,10 +23,22 @@ export default function DashboardView() {
    
 
     if (isLoading) return <div>Cargando...</div>
-    console.log(data)
-    console.log(isError)
-    
-    if (data)  ///este se quita si no da error xd 
+    console.log('projects data:', projects)
+    console.log('error:', error)
+
+    // If data is present but not an array, show an error UI instead of crashing
+    if (projects && !Array.isArray(projects)) {
+        return (
+            <div className="p-6">
+                <h2 className="text-2xl font-bold text-red-600">Error: respuesta inválida de la API</h2>
+                <p className="mt-4">Se esperaba un arreglo de proyectos pero la respuesta tiene otro formato.</p>
+                <pre className="mt-4 p-4 bg-gray-100 rounded text-sm overflow-auto">{JSON.stringify(projects, null, 2)}</pre>
+                <p className="mt-4 text-sm text-gray-500">Revisa la variable <code>VITE_API_URL</code> en tu archivo <code>.env</code> y que el backend esté corriendo.</p>
+            </div>
+        )
+    }
+
+    if (projects)
     return (
         <>
             <h1 className="text-5xl font-black">Mis Proyectos</h1>
@@ -42,9 +52,9 @@ export default function DashboardView() {
                 </Link>
             </nav>
 
-            {data && data.length ? (
+            {projects && projects.length ? (
                 <ul role="list" className="divide-y divide-gray-100 border border-gray-100 mt-10 bg-white shadow-lg">
-                    {data.map((project: Project) => (
+                    {projects.map((project: Project) => (
                         <li key={project._id} className="flex justify-between gap-x-6 px-5 py-10">
                             <div className="flex min-w-0 gap-x-4">
                                 <div className="min-w-0 flex-auto space-y-2">
@@ -136,3 +146,4 @@ export default function DashboardView() {
         </>
     )
 }
+   

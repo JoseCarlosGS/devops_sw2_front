@@ -29,6 +29,8 @@ export const taskSchema = z.object({
 });
 export type Task = z.infer<typeof taskSchema>;
 export type TaskFormData = Pick <Task ,'name' | 'description' | 'project' | 'status'>;
+export type TaskStatus = z.infer<typeof tasksStatusSchema>;
+export type GroupedTasks = Record<TaskStatus, Task[]>;
 
 /** proyects */
 

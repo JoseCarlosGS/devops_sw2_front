@@ -10,8 +10,32 @@ type TaskCardProps = {
 
 export default function TaskCard({ task }: TaskCardProps) {
     const navigate = useNavigate()
+    
+    const handleDragStart = (e: React.DragEvent) => {
+        // Validar que la tarea tiene un ID válido
+        if (!task._id) {
+            console.error("Task ID is missing:", task)
+            e.preventDefault()
+            return
+        }
+        
+        const dragData = {
+            taskId: task._id,
+            currentStatus: task.status
+        }
+        
+        console.log("Starting drag with data:", dragData)
+        e.dataTransfer.setData('text/plain', JSON.stringify(dragData))
+    }
+    
     return (
-        <li className="p-5 bg-white border border-slate-300 flex justify-between gap-3">
+        <li 
+            className={`p-5 bg-white border border-slate-300 flex justify-between gap-3 transition-shadow ${
+                task._id ? 'cursor-move hover:shadow-md' : 'cursor-not-allowed opacity-50'
+            }`}
+            draggable={!!task._id}
+            onDragStart={handleDragStart}
+        >
             <div className="min-w-0 flex flex-col gap-y-4">
                 <button
                     type="button"

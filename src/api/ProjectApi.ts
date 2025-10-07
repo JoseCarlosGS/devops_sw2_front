@@ -1,4 +1,3 @@
-
 import api from "@/lib/axios";
 import { dashboardProjectSchema, Project, ProjectFormData } from "../types";
 import { isAxiosError } from "axios";
@@ -18,19 +17,47 @@ export async function createProject(formdata: ProjectFormData) {
 
 export async function getProjects() {
     try {
-        const { data } = await api("/projects")
-        const response = dashboardProjectSchema.safeParse(data)
-        if (response.success) {
-            console.log("response", response)
-            return response.data
+        console.log('Fetching projects from:', api.defaults.baseURL);
+        const { data } = await api.get("/projects");
+
+        // Some misconfigurations (for example pointing VITE_API_URL to the Vite dev server)
+        // return HTML (index.html). Detect that case and throw a helpful error instead
+        if (typeof data === 'string' && data.trim().startsWith('<')) {
+            console.error('getProjects: received HTML response (likely wrong VITE_API_URL)');
+            console.error('Current base URL:', api.defaults.baseURL);
+            console.error(data.substring(0, 500));
+            throw new Error('Invalid API response: received HTML. Check VITE_API_URL in your .env')
         }
-        return data
+
+        console.log('Received projects data:', data);
+        // If the backend returns the expected array shape, validate it with zod
+        const response = dashboardProjectSchema.safeParse(data);
+        if (response.success) {
+            return response.data;
+        }
+
+        // If data is already an array (but didn't match the schema), return it to avoid breaking
+        if (Array.isArray(data)) {
+            console.warn('Data validation failed but received array. Returning raw data.');
+            return data;
+        }
+
+        // Unknown response shape
+        console.error('getProjects: unexpected response shape', data);
+        throw new Error('Invalid API response: expected array of projects');
 
     } catch (error) {
-        if (isAxiosError(error) && error.response) {
-            throw new Error(error.response.data.message)
+        console.error('Error in getProjects:', error);
+        if (isAxiosError(error)) {
+            console.error('Axios error details:', {
+                baseURL: error.config?.baseURL,
+                url: error.config?.url,
+                method: error.config?.method,
+                status: error.response?.status
+            });
+            throw new Error(`Error fetching projects: ${error.response?.data?.message || error.message}`);
         }
-        throw new Error("Error fetching projects")
+        throw new Error("Error fetching projects");
     }
 }
 

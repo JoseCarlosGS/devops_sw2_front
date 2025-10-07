@@ -1,6 +1,6 @@
-import { Fragment, use } from "react";
-import { Dialog, Transition, } from "@headlessui/react";
-import { useLocation, useNavigate, useParams } from "react-router";
+import { Fragment } from "react";
+import { Dialog, Transition } from "@headlessui/react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import TaskForm from "./task/TaskForm";
 import { TaskFormData } from "../types";
@@ -15,13 +15,17 @@ export default function AddTaskModal() {
     const showModal = modalTask ? true : false;
     /**    * obterener el projectId de la url     */
     const params = useParams()
-    const projectId = params.projectId! 
+    const projectId = params.projectId!
+
+    // Provide full TaskFormData defaults so types align with TaskForm
     const initialValues = {
         name: '',
-        description: ''
+        description: '',
+        project: projectId ?? '',
+        status: 'pending' as const,
     }
 
-    const { register, handleSubmit,reset, formState: { errors } } = useForm({ defaultValues: initialValues })
+    const { register, handleSubmit, reset, formState: { errors } } = useForm<TaskFormData>({ defaultValues: initialValues })
     const queryClient = useQueryClient()
     const { mutate } = useMutation({
         mutationFn: createTask ,
@@ -95,7 +99,12 @@ export default function AddTaskModal() {
                                         onSubmit={handleSubmit(handleCreateTask)}
                                         noValidate
                                     >
+                                        {/* Ensure TaskForm receives register and errors */}
                                         <TaskForm register={register} errors={errors} />
+
+                                        {/* Register hidden fields so TaskFormData contains project and status */}
+                                        <input type="hidden" value={projectId ?? ''} {...register('project')} />
+                                        <input type="hidden" value="pending" {...register('status')} />
 
                                         <input
                                             type="submit"
